@@ -568,6 +568,22 @@ function montarResultadoPosicoes(){
 
     dadosPosicoes.forEach(p=>{
 
+        // Considera só posições de APANHA. O arquivo de Posição
+        // de Endereços traz Apanha e Pulmão juntos — sem esse
+        // filtro, o mapa de posições/vazias e a sugestão de
+        // realocação misturavam endereço de pulmão (reserva)
+        // com endereço de apanha (picking real), inflando os
+        // números.
+
+        const especieBruta =
+        String(p.ESPECIE_END || "").toUpperCase();
+
+        if(!especieBruta.includes("APANHA")){
+
+            return;
+
+        }
+
         const rua = Number(p.CODRUA) || 0;
         const predio = Number(p.NROPREDIO) || 0;
 
