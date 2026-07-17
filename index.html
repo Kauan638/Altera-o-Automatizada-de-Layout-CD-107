@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Alteração Automatizada de Layout CD 107
+    </title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- XLSX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Papa Parse -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>
+            🏗️ Alteração Automatizada de Layout CD 107
+        </h1>
+
+        <!-- ===================================== -->
+        <!-- UPLOADS -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Arquivos
+            </h2>
+
+            <p class="card-subtexto">
+                Os dois uploads abaixo alimentam todas as seções da página: o mapa de
+                posições vazias e a sugestão de realocação por alto giro.
+            </p>
+
+            <div class="upload-area">
+
+                <!-- POSIÇÕES -->
+
+                <div class="upload-box">
+
+                    <label>
+                        📦 Posição de Endereços
+                    </label>
+
+                    <label
+                        class="upload-btn"
+                        for="arquivoPosicoes">
+
+                        Selecionar Arquivo
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="arquivoPosicoes"
+                        accept=".txt,.csv">
+
+                    <div
+                        class="upload-nome"
+                        id="nomePosicoes">
+
+                        Nenhum arquivo selecionado
+
+                    </div>
+
+                </div>
+
+                <!-- ABC -->
+
+                <div class="upload-box">
+
+                    <label>
+                        📈 Análise ABC por Movimentação
+                    </label>
+
+                    <label
+                        class="upload-btn"
+                        for="arquivoABC">
+
+                        Selecionar Arquivo
+
+                    </label>
+
+                    <input
+                        type="file"
+                        id="arquivoABC"
+                        accept=".xlsx,.xls,.csv">
+
+                    <div
+                        class="upload-nome"
+                        id="nomeABC">
+
+                        Nenhum arquivo selecionado
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <br>
+
+            <div class="acoes">
+
+                <button
+                    class="btn-processar"
+                    onclick="processarLayout()">
+
+                    🚀 Processar Dados
+
+                </button>
+
+                <button
+                    class="btn-exportar"
+                    onclick="gerarSugestoesRealocacao()">
+
+                    🔄 Sugestão de Realocação (Alto Giro)
+
+                </button>
+
+            </div>
+
+            <div
+                id="avisoABC"
+                class="aviso"
+                style="display:none;">
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- REGRAS DE CLASSIFICAÇÃO -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Regras de Classificação — Pavilhão 2
+            </h2>
+
+            <p class="card-subtexto">
+                Define o tamanho físico de cada endereço a partir da Rua e do Prédio.
+                Só o Pavilhão 2 tem regra por enquanto; os demais pavilhões aparecem
+                como "Sem regra definida" até serem mapeados.
+            </p>
+
+            <table class="regras-tabela">
+
+                <thead>
+
+                    <tr>
+                        <th>Rua</th>
+                        <th>Prédio</th>
+                        <th>Tipo de Posição</th>
+                        <th>Tamanho</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td>073 – 079</td>
+                        <td>Todos</td>
+                        <td>Pallet Inteiro</td>
+                        <td><span class="badge badge-grande">Grande</span></td>
+                    </tr>
+
+                    <tr>
+                        <td>080 – 104</td>
+                        <td>133 / 134</td>
+                        <td>Picking (Metade)</td>
+                        <td><span class="badge badge-pequena">Pequena</span></td>
+                    </tr>
+
+                    <tr>
+                        <td>080 – 104</td>
+                        <td>135 em diante</td>
+                        <td>Pallet Inteiro</td>
+                        <td><span class="badge badge-grande">Grande</span></td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- KPIs -->
+        <!-- ===================================== -->
+
+        <div class="kpis">
+
+            <div class="kpi-card">
+                <h3>Total Posições (c/ regra)</h3>
+                <span id="kpiTotalPosicoes">0</span>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Vazias — Pallet Inteiro</h3>
+                <span id="kpiVaziasGrandes">0</span>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Vazias — Picking</h3>
+                <span id="kpiVaziasPequenas">0</span>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Alto Giro em Posição Pequena</h3>
+                <span id="kpiAltoGiroPequena">0</span>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Sem Regra Definida</h3>
+                <span id="kpiSemRegra">0</span>
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- FILTROS -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Filtros
+            </h2>
+
+            <div class="filtros">
+
+                <input
+                    type="text"
+                    id="filtroSKU"
+                    placeholder="Filtrar SKU">
+
+                <input
+                    type="text"
+                    id="filtroRua"
+                    placeholder="Filtrar Rua">
+
+                <select id="filtroStatusPosicao">
+
+                    <option value="">Todas (Livres + Ocupadas)</option>
+                    <option value="LIVRE">Só Livres</option>
+                    <option value="OCUPADA">Só Ocupadas</option>
+
+                </select>
+
+                <select id="filtroTamanho">
+
+                    <option value="">Todos Tamanhos</option>
+                    <option value="grande">Pallet Inteiro (Grande)</option>
+                    <option value="pequena">Picking (Pequena)</option>
+                    <option value="desconhecido">Sem Regra Definida</option>
+
+                </select>
+
+                <select id="filtroPavilhao">
+
+                    <option value="">Todos Pavilhões</option>
+                    <option value="Pavilhão 1">Pavilhão 1</option>
+                    <option value="Pavilhão 2">Pavilhão 2</option>
+                    <option value="Pavilhão 3">Pavilhão 3</option>
+                    <option value="Perecível">Perecível</option>
+                    <option value="Sem Pavilhão">Sem Pavilhão</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================== -->
+        <!-- RESULTADO — MAPA DE POSIÇÕES -->
+        <!-- ===================================== -->
+
+        <div class="card">
+
+            <h2>
+                Mapa de Posições
+            </h2>
+
+            <p class="card-subtexto">
+                Todas as posições do arquivo de Posição de Endereços já classificadas
+                por tamanho. Use os filtros acima para focar nas posições vazias que
+                podem receber um item de alto giro.
+            </p>
+
+            <div class="tabela-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Pavilhão</th>
+                            <th>Rua</th>
+                            <th>Prédio</th>
+                            <th>Endereço</th>
+                            <th>Espécie</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>SKU Atual</th>
+                            <th>Descrição</th>
+                            <th>Curva ABC</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tbodyPosicoes">
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="paginacao-controles">
+
+                <div id="resumoPaginacao" class="resumo-paginacao"></div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- LOADING -->
+    <!-- ===================================== -->
+
+    <div
+        class="loading"
+        id="loading">
+
+        <div class="spinner"></div>
+
+        <p>
+            Processando arquivos...
+        </p>
+
+    </div>
+
+    <!-- ===================================== -->
+    <!-- MODAL SUGESTÃO DE REALOCAÇÃO -->
+    <!-- ===================================== -->
+
+    <div
+        class="modal-sugestao"
+        id="modalRealocacao">
+
+        <div class="modal-conteudo">
+
+            <div class="modal-topo">
+
+                <h2>
+                    🔄 Sugestão de Realocação — Alto Giro
+                </h2>
+
+                <button
+                    class="btn-fechar"
+                    onclick="fecharModalRealocacao()">
+
+                    Fechar ✕
+
+                </button>
+
+            </div>
+
+            <div class="modal-corpo">
+
+                <p class="card-subtexto">
+                    Itens Curva A (alto giro) hoje ocupando uma posição Picking (pequena)
+                    em rua/prédio com regra definida, com sugestão de endereço Pallet
+                    Inteiro (grande) livre na mesma rua.
+                </p>
+
+                <div class="cards-mov">
+
+                    <div class="card-mov">
+                        <h3>Total Candidatos</h3>
+                        <span id="realocTotal">0</span>
+                    </div>
+
+                    <div class="card-mov">
+                        <h3>Sem Destino Livre</h3>
+                        <span id="realocSemDestino">0</span>
+                    </div>
+
+                    <div class="card-mov">
+                        <h3>Com Destino Livre</h3>
+                        <span id="realocComDestino">0</span>
+                    </div>
+
+                    <div class="card-mov">
+                        <h3>% Acumulado Médio (Curva A)</h3>
+                        <span id="realocPercentual">0%</span>
+                    </div>
+
+                </div>
+
+                <div class="filtros-mov">
+
+                    <input
+                        type="text"
+                        id="filtroRealocSKU"
+                        placeholder="Filtrar SKU">
+
+                    <input
+                        type="text"
+                        id="filtroRealocRua"
+                        placeholder="Filtrar Rua">
+
+                    <button
+                        class="btn-exportar"
+                        onclick="imprimirRealocacaoModal()">
+
+                        🖨️ Imprimir
+
+                    </button>
+
+                </div>
+
+                <div class="tabela-container">
+
+                    <table class="tabela-mov">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>SKU</th>
+                                <th>Produto</th>
+                                <th>Curva</th>
+                                <th>Posição Pequena Atual</th>
+                                <th>Quantidade</th>
+                                <th>Mover para (Grande)</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="tbodyRealocacao">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
